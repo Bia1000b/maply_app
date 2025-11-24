@@ -167,7 +167,13 @@ class _$PlaceDao extends PlaceDao {
         mapper: (Map<String, Object?> row) => Place(
             id: row['id'] as int,
             name: row['name'] as String,
-            location: row['location'] as String));
+            location: row['location'] as String,
+            favorite: (row['favorite'] as int) == 1,
+            latitude: row['latitude'] as double,
+            longitude: row['longitude'] as double,
+            description: row['description'] as String,
+            category: row['category'] as String,
+            ));
   }
 
   @override
@@ -176,7 +182,13 @@ class _$PlaceDao extends PlaceDao {
         mapper: (Map<String, Object?> row) => Place(
             id: row['id'] as int,
             name: row['name'] as String,
-            location: row['location'] as String),
+            location: row['location'] as String,
+            favorite: (row['favorite'] as int) == 1,
+            latitude: row['latitude'] as double,
+            longitude: row['longitude'] as double,
+            description: row['description'] as String,
+            category: row['category'] as String,
+            ),
         arguments: [id]);
   }
 
