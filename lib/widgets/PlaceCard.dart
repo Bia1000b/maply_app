@@ -7,12 +7,12 @@ class PlaceCard extends StatelessWidget {
   final String? imagePath;
 
   const PlaceCard({
-    Key? key,
+    super.key,
     required this.name,
     required this.location,
     required this.date,
     this.imagePath,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
-
+import 'database/app_database.dart';
+import 'models/place.dart';
 import 'pages/HomePage.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final database = await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+  final placeDao = database.placeDao;
+
+  runApp(MyApp(placeDao: placeDao));
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

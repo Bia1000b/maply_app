@@ -1,0 +1,14 @@
+import 'package:floor/floor.dart';
+import '../models/visit.dart';
+
+@dao
+abstract class VisitDao {
+  @Query('SELECT * FROM Visit WHERE placeId = :placeId')
+  Future<List<Visit>> findVisitsByPlaceId(int placeId);
+
+  @insert
+  Future<void> insertVisit(Visit visit);
+
+  @delete
+  Future<void> deleteVisit(Visit visit);
+}

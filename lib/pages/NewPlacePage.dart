@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../widgets/Label.dart';
 class NewPlacePage extends StatefulWidget {
+  const NewPlacePage({super.key});
+
   @override
   _NewPlacePageState createState() => _NewPlacePageState();
 }
@@ -9,8 +11,8 @@ class NewPlacePage extends StatefulWidget {
 class _NewPlacePageState extends State<NewPlacePage> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedCategory;
-  TextEditingController _dateController = TextEditingController();
-  List<String> _selectedImagePaths = [];
+  final TextEditingController _dateController = TextEditingController();
+  final List<String> _selectedImagePaths = [];
 
   @override
   void dispose() {
@@ -108,7 +110,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
                   hintText: 'Selecione uma categoria',
                   suffixIcon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
                 ),
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 dropdownColor: Colors.white, // Fundo do dropdown BRANCO
                 style: Theme.of(context).textTheme.labelLarge,
                 items: <String>['Cafeteria', 'Restaurante', 'Parque', 'Museu', 'Hotel', 'Praia', 'Outro']
