@@ -100,7 +100,7 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Place` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `location` TEXT NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Place` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `location` TEXT NOT NULL, `favorite` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `description` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Visit` (`id` INTEGER NOT NULL, `placeId` INTEGER NOT NULL, `description` TEXT NOT NULL, `rating` REAL NOT NULL, `date` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -139,7 +139,12 @@ class _$PlaceDao extends PlaceDao {
             (Place item) => <String, Object?>{
                   'id': item.id,
                   'name': item.name,
-                  'location': item.location
+                  'location': item.location,
+                  'favorite': item.favorite ? 1 : 0,
+                  'latitude': item.latitude,
+                  'longitude': item.longitude,
+                  'description': item.description,
+                  'category': item.category
                 }),
         _placeDeletionAdapter = DeletionAdapter(
             database,
@@ -148,7 +153,12 @@ class _$PlaceDao extends PlaceDao {
             (Place item) => <String, Object?>{
                   'id': item.id,
                   'name': item.name,
-                  'location': item.location
+                  'location': item.location,
+                  'favorite': item.favorite ? 1 : 0,
+                  'latitude': item.latitude,
+                  'longitude': item.longitude,
+                  'description': item.description,
+                  'category': item.category
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -168,12 +178,11 @@ class _$PlaceDao extends PlaceDao {
             id: row['id'] as int,
             name: row['name'] as String,
             location: row['location'] as String,
-            favorite: (row['favorite'] as int) == 1,
+            favorite: (row['favorite'] as int) != 0,
             latitude: row['latitude'] as double,
             longitude: row['longitude'] as double,
             description: row['description'] as String,
-            category: row['category'] as String,
-            ));
+            category: row['category'] as String));
   }
 
   @override
@@ -183,12 +192,11 @@ class _$PlaceDao extends PlaceDao {
             id: row['id'] as int,
             name: row['name'] as String,
             location: row['location'] as String,
-            favorite: (row['favorite'] as int) == 1,
+            favorite: (row['favorite'] as int) != 0,
             latitude: row['latitude'] as double,
             longitude: row['longitude'] as double,
             description: row['description'] as String,
-            category: row['category'] as String,
-            ),
+            category: row['category'] as String),
         arguments: [id]);
   }
 
