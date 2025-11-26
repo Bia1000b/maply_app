@@ -72,8 +72,6 @@ class _$AppDatabase extends AppDatabase {
     changeListener = listener ?? StreamController<String>.broadcast();
   }
 
-  PlaceDao? _placeDaoInstance;
-
   VisitDao? _visitDaoInstance;
 
   PictureDao? _pictureDaoInstance;
@@ -100,9 +98,7 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Place` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `location` TEXT NOT NULL, PRIMARY KEY (`id`))');
-        await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Visit` (`id` INTEGER NOT NULL, `placeId` INTEGER NOT NULL, `description` TEXT NOT NULL, `rating` REAL NOT NULL, `date` TEXT NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Visit` (`id` INTEGER NOT NULL, `description` TEXT NOT NULL, `rating` REAL NOT NULL, `date` TEXT NOT NULL, `placeName` TEXT NOT NULL, `placeLocation` TEXT NOT NULL, `placeDescription` TEXT NOT NULL, `category` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `favorite` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Picture` (`id` INTEGER NOT NULL, `visitId` INTEGER NOT NULL, `filePath` TEXT NOT NULL, `description` TEXT NOT NULL, PRIMARY KEY (`id`))');
 
@@ -110,11 +106,6 @@ class _$AppDatabase extends AppDatabase {
       },
     );
     return sqfliteDatabaseFactory.openDatabase(path, options: databaseOptions);
-  }
-
-  @override
-  PlaceDao get placeDao {
-    return _placeDaoInstance ??= _$PlaceDao(database, changeListener);
   }
 
   @override
@@ -128,81 +119,6 @@ class _$AppDatabase extends AppDatabase {
   }
 }
 
-class _$PlaceDao extends PlaceDao {
-  _$PlaceDao(
-    this.database,
-    this.changeListener,
-  )   : _queryAdapter = QueryAdapter(database),
-        _placeInsertionAdapter = InsertionAdapter(
-            database,
-            'Place',
-            (Place item) => <String, Object?>{
-                  'id': item.id,
-                  'name': item.name,
-                  'location': item.location
-                }),
-        _placeDeletionAdapter = DeletionAdapter(
-            database,
-            'Place',
-            ['id'],
-            (Place item) => <String, Object?>{
-                  'id': item.id,
-                  'name': item.name,
-                  'location': item.location
-                });
-
-  final sqflite.DatabaseExecutor database;
-
-  final StreamController<String> changeListener;
-
-  final QueryAdapter _queryAdapter;
-
-  final InsertionAdapter<Place> _placeInsertionAdapter;
-
-  final DeletionAdapter<Place> _placeDeletionAdapter;
-
-  @override
-  Future<List<Place>> findAllPlaces() async {
-    return _queryAdapter.queryList('SELECT * FROM Place',
-        mapper: (Map<String, Object?> row) => Place(
-            id: row['id'] as int,
-            name: row['name'] as String,
-            location: row['location'] as String,
-            favorite: (row['favorite'] as int) == 1,
-            latitude: row['latitude'] as double,
-            longitude: row['longitude'] as double,
-            description: row['description'] as String,
-            category: row['category'] as String,
-            ));
-  }
-
-  @override
-  Future<Place?> findPlaceById(int id) async {
-    return _queryAdapter.query('SELECT * FROM Place WHERE id = ?1',
-        mapper: (Map<String, Object?> row) => Place(
-            id: row['id'] as int,
-            name: row['name'] as String,
-            location: row['location'] as String,
-            favorite: (row['favorite'] as int) == 1,
-            latitude: row['latitude'] as double,
-            longitude: row['longitude'] as double,
-            description: row['description'] as String,
-            category: row['category'] as String,
-            ),
-        arguments: [id]);
-  }
-
-  @override
-  Future<void> insertPlace(Place place) async {
-    await _placeInsertionAdapter.insert(place, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<void> deletePlace(Place place) async {
-    await _placeDeletionAdapter.delete(place);
-  }
-}
-
 class _$VisitDao extends VisitDao {
   _$VisitDao(
     this.database,
@@ -213,10 +129,16 @@ class _$VisitDao extends VisitDao {
             'Visit',
             (Visit item) => <String, Object?>{
                   'id': item.id,
-                  'placeId': item.placeId,
                   'description': item.description,
                   'rating': item.rating,
-                  'date': item.date
+                  'date': item.date,
+                  'placeName': item.placeName,
+                  'placeLocation': item.placeLocation,
+                  'placeDescription': item.placeDescription,
+                  'category': item.category,
+                  'latitude': item.latitude,
+                  'longitude': item.longitude,
+                  'favorite': item.favorite ? 1 : 0
                 }),
         _visitDeletionAdapter = DeletionAdapter(
             database,
@@ -224,10 +146,16 @@ class _$VisitDao extends VisitDao {
             ['id'],
             (Visit item) => <String, Object?>{
                   'id': item.id,
-                  'placeId': item.placeId,
                   'description': item.description,
                   'rating': item.rating,
-                  'date': item.date
+                  'date': item.date,
+                  'placeName': item.placeName,
+                  'placeLocation': item.placeLocation,
+                  'placeDescription': item.placeDescription,
+                  'category': item.category,
+                  'latitude': item.latitude,
+                  'longitude': item.longitude,
+                  'favorite': item.favorite ? 1 : 0
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -245,10 +173,16 @@ class _$VisitDao extends VisitDao {
     return _queryAdapter.queryList('SELECT * FROM Visit WHERE placeId = ?1',
         mapper: (Map<String, Object?> row) => Visit(
             id: row['id'] as int,
-            placeId: row['placeId'] as int,
             description: row['description'] as String,
             rating: row['rating'] as double,
-            date: row['date'] as String),
+            date: row['date'] as String,
+            placeName: row['placeName'] as String,
+            placeLocation: row['placeLocation'] as String,
+            placeDescription: row['placeDescription'] as String,
+            category: row['category'] as String,
+            latitude: row['latitude'] as double,
+            longitude: row['longitude'] as double,
+            favorite: (row['favorite'] as int) != 0),
         arguments: [placeId]);
   }
 
