@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'database/app_database.dart';
 import 'pages/HomePage.dart';
 
-void main() {
+late AppDatabase database;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  database = await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+
   runApp(const MyApp());
 }
 
