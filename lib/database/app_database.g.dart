@@ -169,6 +169,23 @@ class _$VisitDao extends VisitDao {
   final DeletionAdapter<Visit> _visitDeletionAdapter;
 
   @override
+  Future<List<Visit>> findAllVisits() async {
+    return _queryAdapter.queryList('SELECT * FROM Visit',
+        mapper: (Map<String, Object?> row) => Visit(
+            id: row['id'] as int,
+            description: row['description'] as String,
+            rating: row['rating'] as double,
+            date: row['date'] as String,
+            placeName: row['placeName'] as String,
+            placeLocation: row['placeLocation'] as String,
+            placeDescription: row['placeDescription'] as String,
+            category: row['category'] as String,
+            latitude: row['latitude'] as double,
+            longitude: row['longitude'] as double,
+            favorite: (row['favorite'] as int) != 0));
+  }
+
+  @override
   Future<List<Visit>> findVisitsByPlaceId(int placeId) async {
     return _queryAdapter.queryList('SELECT * FROM Visit WHERE placeId = ?1',
         mapper: (Map<String, Object?> row) => Visit(

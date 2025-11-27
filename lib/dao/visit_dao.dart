@@ -3,6 +3,10 @@ import '../models/visit.dart';
 
 @dao
 abstract class VisitDao {
+
+  @Query('SELECT * FROM Visit')
+  Future<List<Visit>> findAllVisits();
+
   @Query('SELECT * FROM Visit WHERE placeId = :placeId')
   Future<List<Visit>> findVisitsByPlaceId(int placeId);
 

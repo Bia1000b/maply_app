@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
-import '../models/place.dart';
+import '../models/visit.dart';
 import '../widgets/PlaceCard.dart';
 import 'NewPlacePage.dart';
 
@@ -13,22 +13,22 @@ class HomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<HomePage> {
-  List<Place> _places = [];
+  List<Visit> _visits = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    getPlaces();
+    getVisits();
   }
 
-  Future<void> getPlaces() async {
+  Future<void> getVisits() async {
     try {
-      final places = await database.placeDao.findAllPlaces();
+      final visits = await database.visitDao.findAllVisits();
 
       if (mounted) {
         setState(() {
-          _places = places;
+          _visits = visits;
           _isLoading = false;
         });
       }
@@ -36,7 +36,7 @@ class _MyHomePageState extends State<HomePage> {
       debugPrint("ERRO AO CARREGAR: $e");
       if (mounted) {
         setState(() {
-          _places = [];
+          _visits = [];
           _isLoading = false;
         });
       }
@@ -51,7 +51,7 @@ class _MyHomePageState extends State<HomePage> {
         leading: IconButton(
           icon: Icon(Icons.location_pin, color: Theme.of(context).colorScheme.primary),
           onPressed: () {
-            print('Adicionar novo lugar');
+            print('Abrir mapa');
           },
         ),
         title: Center(child: Text('Meus Lugares', style: Theme.of(context).textTheme.headlineSmall)),
@@ -72,7 +72,7 @@ class _MyHomePageState extends State<HomePage> {
                       builder: (context) => const NewPlacePage(),
                     ),
                   );
-                  getPlaces();
+                  getVisits();
                 },
               ),
             ),
@@ -137,7 +137,7 @@ class _MyHomePageState extends State<HomePage> {
     }
 
     // 2. Estado Vazio (Sem dados)
-    if (_places.isEmpty) {
+    if (_visits.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -168,15 +168,15 @@ class _MyHomePageState extends State<HomePage> {
     // 3. Lista com Dados
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: _places.length,
+      itemCount: _visits.length,
       itemBuilder: (context, index) {
-        final place = _places[index];
+        final visit = _visits[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
           child: PlaceCard(
-            name: place.name,
-            location: place.location,
-            date: "Data aqui",
+            name: visit.placeName,
+            location: visit.placeLocation,
+            date: visit.date,
             imagePath: null,   // Substituir pela imagem
           ),
         );
