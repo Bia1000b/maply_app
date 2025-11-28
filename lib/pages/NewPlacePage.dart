@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-
+import '../main.dart';
+import '../models/visit.dart';
 import '../widgets/Label.dart';
+
 class NewPlacePage extends StatefulWidget {
   const NewPlacePage({super.key});
 
@@ -10,12 +12,21 @@ class NewPlacePage extends StatefulWidget {
 
 class _NewPlacePageState extends State<NewPlacePage> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedCategory;
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _ratingsController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+
+  String? _selectedCategory;
   final List<String> _selectedImagePaths = [];
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _locationController.dispose();
+    _notesController.dispose();
     _dateController.dispose();
     super.dispose();
   }
@@ -58,14 +69,42 @@ class _NewPlacePageState extends State<NewPlacePage> {
   }
 
   // funcao de salvar
-  void _saveMemory() {
+  Future<void> _saveMemory() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      // Aqui envia os dados p/ o SQLite
-      print("Memória Salva! Dados válidos.");
-      // Navigator.pop(context); // Isso fechar a tela após salvar
+
+      try {
+        // Criando o objeto Visit com os dados do formulário
+        final newVisit = Visit(
+          placeName: _nameController.text,
+          category: _selectedCategory ?? "Outro",
+          placeLocation: _locationController.text,
+          date: _dateController.text,
+          description: _notesController.text,
+          rating: double.tryParse(_ratingsController.text) ?? 0,
+          latitude: 0,
+          longitude: 0,
+          favorite: false,
+        );
+
+        // Chamando o DAO para inserir no banco
+        await database.visitDao.insertVisit(newVisit);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lugar salvo com sucesso!'), backgroundColor: Colors.green),
+          );
+          // Fecha a tela e volta para a Home
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        print("Erro ao salvar: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar os dados.'), backgroundColor: Colors.red),
+        );
+      }
+
     } else {
-      print("Erro de validação. Preencha todos os campos obrigatórios.");
+      print("Erro de validação.");
     }
   }
 
@@ -95,6 +134,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
                   hintText: 'Ex: Café da Esquina',
                 ),
                 style: Theme.of(context).textTheme.labelLarge,
+                controller: _nameController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'O nome do local é obrigatório.';
@@ -164,6 +204,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
                   suffixIcon: Icon(Icons.location_on, color: Colors.grey[400]),
                 ),
                 style: Theme.of(context).textTheme.labelLarge,
+                controller: _locationController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'A localização é obrigatória.';
@@ -182,7 +223,24 @@ class _NewPlacePageState extends State<NewPlacePage> {
                   alignLabelWithHint: true,
                 ),
                 style: Theme.of(context).textTheme.labelLarge,
+                controller: _notesController,
                 // Notas são opcionais, então não precisa de validator
+              ),
+              SizedBox(height: 20),
+
+              buildLabel('Avaliação (0-5)', context),
+              TextFormField(
+                decoration: InputDecoration(
+                  hintText: 'Número de 0 - 5',
+                ),
+                style: Theme.of(context).textTheme.labelLarge,
+                controller: _ratingsController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'A avaliação do local é obrigatória.';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 20),
 

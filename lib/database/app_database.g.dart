@@ -98,7 +98,7 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Visit` (`id` INTEGER NOT NULL, `description` TEXT NOT NULL, `rating` REAL NOT NULL, `date` TEXT NOT NULL, `placeName` TEXT NOT NULL, `placeLocation` TEXT NOT NULL, `placeDescription` TEXT NOT NULL, `category` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `favorite` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Visit` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `description` TEXT, `rating` REAL NOT NULL, `date` TEXT NOT NULL, `placeName` TEXT NOT NULL, `placeLocation` TEXT NOT NULL, `category` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `favorite` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Picture` (`id` INTEGER NOT NULL, `visitId` INTEGER NOT NULL, `filePath` TEXT NOT NULL, `description` TEXT NOT NULL, PRIMARY KEY (`id`))');
 
@@ -134,7 +134,6 @@ class _$VisitDao extends VisitDao {
                   'date': item.date,
                   'placeName': item.placeName,
                   'placeLocation': item.placeLocation,
-                  'placeDescription': item.placeDescription,
                   'category': item.category,
                   'latitude': item.latitude,
                   'longitude': item.longitude,
@@ -151,7 +150,6 @@ class _$VisitDao extends VisitDao {
                   'date': item.date,
                   'placeName': item.placeName,
                   'placeLocation': item.placeLocation,
-                  'placeDescription': item.placeDescription,
                   'category': item.category,
                   'latitude': item.latitude,
                   'longitude': item.longitude,
@@ -172,13 +170,12 @@ class _$VisitDao extends VisitDao {
   Future<List<Visit>> findAllVisits() async {
     return _queryAdapter.queryList('SELECT * FROM Visit',
         mapper: (Map<String, Object?> row) => Visit(
-            id: row['id'] as int,
-            description: row['description'] as String,
+            id: row['id'] as int?,
+            description: row['description'] as String?,
             rating: row['rating'] as double,
             date: row['date'] as String,
             placeName: row['placeName'] as String,
             placeLocation: row['placeLocation'] as String,
-            placeDescription: row['placeDescription'] as String,
             category: row['category'] as String,
             latitude: row['latitude'] as double,
             longitude: row['longitude'] as double,
@@ -189,13 +186,12 @@ class _$VisitDao extends VisitDao {
   Future<List<Visit>> findVisitsByPlaceId(int placeId) async {
     return _queryAdapter.queryList('SELECT * FROM Visit WHERE placeId = ?1',
         mapper: (Map<String, Object?> row) => Visit(
-            id: row['id'] as int,
-            description: row['description'] as String,
+            id: row['id'] as int?,
+            description: row['description'] as String?,
             rating: row['rating'] as double,
             date: row['date'] as String,
             placeName: row['placeName'] as String,
             placeLocation: row['placeLocation'] as String,
-            placeDescription: row['placeDescription'] as String,
             category: row['category'] as String,
             latitude: row['latitude'] as double,
             longitude: row['longitude'] as double,
