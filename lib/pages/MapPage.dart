@@ -44,7 +44,7 @@ class _MapPageState extends State<MapPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Google Maps')),
+      appBar: AppBar(title: const Text('Meu Mapa')),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: LatLng(_initialLat, _initialLng),
@@ -72,7 +72,7 @@ class _MapPageState extends State<MapPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('OpenStreetMap')),
+      appBar: AppBar(title: const Text('Meu Mapa')),
       body: open_map.FlutterMap(
         options: open_map.MapOptions(
           initialCenter: latlng.LatLng(_initialLat, _initialLng),
