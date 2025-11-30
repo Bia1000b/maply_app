@@ -73,7 +73,7 @@ set_target_properties(${BINARY_NAME}
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
-
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Build output directory" FORCE)
 
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build

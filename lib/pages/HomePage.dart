@@ -4,6 +4,7 @@ import '../main.dart';
 import '../models/visit.dart';
 import '../widgets/PlaceCard.dart';
 import 'NewPlacePage.dart';
+import 'MapPage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -52,6 +53,12 @@ class _MyHomePageState extends State<HomePage> {
           icon: Icon(Icons.location_pin, color: Theme.of(context).colorScheme.primary),
           onPressed: () {
             print('Abrir mapa');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MapPage(visits: _visits),
+              ),
+            );
           },
         ),
         title: Center(child: Text('Meus Lugares', style: Theme.of(context).textTheme.headlineSmall)),
