@@ -100,7 +100,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Visit` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `description` TEXT, `rating` REAL NOT NULL, `date` TEXT NOT NULL, `placeName` TEXT NOT NULL, `placeLocation` TEXT NOT NULL, `category` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `favorite` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Picture` (`id` INTEGER NOT NULL, `visitId` INTEGER NOT NULL, `filePath` TEXT NOT NULL, `description` TEXT NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Picture` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `visitId` INTEGER NOT NULL, `filePath` TEXT NOT NULL, `description` TEXT NOT NULL, FOREIGN KEY (`visitId`) REFERENCES `Visit` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -200,8 +200,9 @@ class _$VisitDao extends VisitDao {
   }
 
   @override
-  Future<void> insertVisit(Visit visit) async {
-    await _visitInsertionAdapter.insert(visit, OnConflictStrategy.abort);
+  Future<int> insertVisit(Visit visit) {
+    return _visitInsertionAdapter.insertAndReturnId(
+        visit, OnConflictStrategy.abort);
   }
 
   @override
@@ -249,10 +250,18 @@ class _$PictureDao extends PictureDao {
   Future<List<Picture>> findPicturesByVisitId(int visitId) async {
     return _queryAdapter.queryList('SELECT * FROM Picture WHERE visitId = ?1',
         mapper: (Map<String, Object?> row) => Picture(
-            id: row['id'] as int,
+            id: row['id'] as int?,
             visitId: row['visitId'] as int,
             filePath: row['filePath'] as String,
             description: row['description'] as String),
+        arguments: [visitId]);
+  }
+
+  @override
+  Future<String?> findFirstPicturePath(int visitId) async {
+    return _queryAdapter.query(
+        'SELECT filePath FROM Picture WHERE visitId = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => row.values.first as String,
         arguments: [visitId]);
   }
 

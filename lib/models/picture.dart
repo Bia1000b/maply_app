@@ -1,15 +1,27 @@
 import 'package:floor/floor.dart';
+import 'visit.dart';
 
-@entity
+@Entity(
+    tableName: 'Picture', // Nome da tabela
+    foreignKeys: [
+      ForeignKey(
+          childColumns: ['visitId'],
+          parentColumns: ['id'],
+          entity: Visit,
+          onDelete: ForeignKeyAction.cascade
+      )
+    ]
+)
 class Picture {
-  @primaryKey
-  final int id;
-  final int visitId; // Foreign key to Visit
-  final String filePath; // Path to the image file
+  @PrimaryKey(autoGenerate: true)
+  final int? id;
+
+  final int visitId;
+  final String filePath;
   final String description;
 
   Picture({
-    required this.id,
+    this.id,
     required this.visitId,
     required this.filePath,
     required this.description,

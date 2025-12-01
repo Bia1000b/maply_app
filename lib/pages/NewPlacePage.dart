@@ -1,11 +1,15 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../main.dart';
 import '../models/visit.dart';
+import '../models/picture.dart';
 import '../widgets/Label.dart';
 import 'dart:convert';
 import 'dart:io'; //detectar se é Linux/Android
 import 'package:http/http.dart' as http; //chama a API no LINUX
+import 'package:path/path.dart' as path;
 
 class NewPlacePage extends StatefulWidget {
   const NewPlacePage({super.key});
@@ -25,6 +29,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
 
   String? _selectedCategory;
   final List<String> _selectedImagePaths = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -62,14 +67,65 @@ class _NewPlacePageState extends State<NewPlacePage> {
     }
   }
 
-  // abertura da galeria
-  void _openGallery() {
-    //colocar pacote image_picker para isso.
-    // Simulando a adição de um caminho de imagem (para teste)
-    setState(() {
-      _selectedImagePaths.add('assets/new_image_${_selectedImagePaths.length}.jpg');
-    });
-    print('Abrir Galeria do Celular');
+  void _mostrarOpcoesImagem(BuildContext context) {
+    if(Platform.isLinux || Platform.isWindows) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Câmera disponível apenas no Mobile")));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Galeria'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_camera),
+              title: Text('Câmera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 50,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImagePaths.add(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      print("Erro ao selecionar imagem: $e");
+    }
+  }
+
+  Future<String> _saveImagePermanently(String temporaryPath) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final name = path.basename(temporaryPath);
+    final newPath = '${directory.path}/$name';
+
+    final File imageFile = File(temporaryPath);
+    await imageFile.copy(newPath);
+
+    return newPath;
   }
 
   Future<Map<String, double>?> _getCoordinates(String address) async {
@@ -79,7 +135,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
         final encodedAddress = Uri.encodeComponent(address);
         final url = Uri.parse(
             'https://nominatim.openstreetmap.org/search?q=$encodedAddress&format=json&limit=1');
-        
+
         final response = await http.get(url, headers: {
           'User-Agent': 'maply_app/1.0',
         });
@@ -90,7 +146,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
             // A API retorna strings mas converti para double por segurança
             final latStr = data[0]['lat'];
             final lonStr = data[0]['lon'];
-            
+
             if (latStr != null && lonStr != null) {
               return {
                 'lat': double.parse(latStr.toString()),
@@ -102,7 +158,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
       } catch (e) {
         debugPrint("Erro API Linux: $e");
       }
-    } 
+    }
     // MOBILE (Geocoding Nativo)
     else {
       try {
@@ -120,71 +176,76 @@ class _NewPlacePageState extends State<NewPlacePage> {
     return null;
   }
 
-  Future<void> _saveMemory() async {
-    if (_formKey.currentState!.validate()) {
-      // mostra o loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-      double latitude = 0;
-      double longitude = 0;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
+    double latitude = 0;
+    double longitude = 0;
+
+    try {
       try {
-        // busca as coordenadas
         final coords = await _getCoordinates(_locationController.text);
-        
-        // Verifica se veio null antes de tentar acessar
         if (coords != null) {
-          latitude = coords['lat'] ?? 0; // Se for null usa 0
+          latitude = coords['lat'] ?? 0;
           longitude = coords['lng'] ?? 0;
         }
-
       } catch (e) {
-        print("Erro ao buscar coordenadas: $e");
-        // segue com 0.0, sem impedir o salvamento
-      } finally {
-        // garante que o loading seja fechado
-        if (mounted) {
-          Navigator.of(context).pop(); 
-        }
+        print("Erro de Geocoding (não crítico): $e");
       }
-      try {
-        // Criando o objeto Visit com os dados do formulário
-        final newVisit = Visit(
-          placeName: _nameController.text,
-          category: _selectedCategory ?? "Outro",
-          placeLocation: _locationController.text,
-          date: _dateController.text,
-          description: _notesController.text,
-          rating: double.tryParse(_ratingsController.text) ?? 0,
-          latitude: latitude,
-          longitude: longitude,
-          favorite: false,
+
+      final newVisit = Visit(
+        placeName: _nameController.text,
+        category: _selectedCategory ?? "Outro",
+        placeLocation: _locationController.text,
+        date: _dateController.text,
+        description: _notesController.text,
+        rating: double.tryParse(_ratingsController.text) ?? 0,
+        latitude: latitude,
+        longitude: longitude,
+        favorite: false,
+      );
+
+      final int visitId = await database.visitDao.insertVisit(newVisit);
+
+      for (String tempPath in _selectedImagePaths) {
+        final String permanentPath = await _saveImagePermanently(tempPath);
+
+        final picture = Picture(
+            visitId: visitId,
+            filePath: permanentPath,
+            description: ''
         );
 
-        // Chamando o DAO para inserir no banco
-        await database.visitDao.insertVisit(newVisit);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Lugar salvo com sucesso!'), backgroundColor: Colors.green),
-          );
-          // Fecha a tela e volta para a Home
-          Navigator.pop(context);
-        }
-      } catch (e) {
-        print("Erro ao salvar: $e");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text('Erro ao salvar os dados: $e'), backgroundColor: Colors.red),
-          );
-        }
+        await database.pictureDao.insertPicture(picture);
       }
-    } else {
-        print("Erro de validação.");
+
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Salvo com sucesso!'), backgroundColor: Colors.green),
+        );
+
+        Navigator.of(context).pop();
+      }
+
+    } catch (e) {
+      print("ERRO AO SALVAR: $e");
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -345,7 +406,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
-          onPressed: _saveMemory,
+          onPressed: _save,
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
             shape: RoundedRectangleBorder(
@@ -366,7 +427,6 @@ class _NewPlacePageState extends State<NewPlacePage> {
     );
   }
 
-  // Widget de Prévia da Imagem (mantido para fins de demonstração da lista)
   Widget _buildSelectedImagePreview(String imagePath) {
     return Padding(
       padding: const EdgeInsets.only(right: 10.0),
@@ -374,11 +434,11 @@ class _NewPlacePageState extends State<NewPlacePage> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
-            child: Container(
+            child: Image.file( // USA IMAGE.FILE
+              File(imagePath),
               width: 100,
               height: 100,
-              color: Color(0xFFF0F0F0), // Cor de fundo claro para simular a imagem
-              child: Center(child: Icon(Icons.image, color: Colors.grey)),
+              fit: BoxFit.cover,
             ),
           ),
           Positioned(
@@ -389,7 +449,6 @@ class _NewPlacePageState extends State<NewPlacePage> {
                 setState(() {
                   _selectedImagePaths.remove(imagePath);
                 });
-                print('Remover imagem: $imagePath');
               },
               child: Container(
                 padding: EdgeInsets.all(2),
@@ -409,7 +468,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
   // Novo Widget: Botão que abre a galeria
   Widget _buildGalleryButton(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: _openGallery,
+      onPressed: () => _mostrarOpcoesImagem(context),
       icon: Icon(Icons.photo_library, color: Theme.of(context).colorScheme.primary),
       label: Text(
         'Adicionar Foto da Galeria',

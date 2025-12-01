@@ -11,7 +11,7 @@ abstract class VisitDao {
   Future<List<Visit>> findVisitsByPlaceId(int placeId);
 
   @insert
-  Future<void> insertVisit(Visit visit);
+  Future<int> insertVisit(Visit visit);
 
   @delete
   Future<void> deleteVisit(Visit visit);

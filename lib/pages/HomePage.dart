@@ -178,14 +178,21 @@ class _MyHomePageState extends State<HomePage> {
       itemCount: _visits.length,
       itemBuilder: (context, index) {
         final visit = _visits[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: PlaceCard(
-            name: visit.placeName,
-            location: visit.placeLocation,
-            date: visit.date,
-            imagePath: null,   // Substituir pela imagem
-          ),
+
+        return FutureBuilder<String?>(
+          future: database.pictureDao.findFirstPicturePath(visit.id!),
+          builder: (context, snapshot) {
+            final String? imagePath = snapshot.data;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: PlaceCard(
+                name: visit.placeName,
+                location: visit.placeLocation,
+                date: visit.date,
+                imagePath: imagePath,
+              ),
+            );
+          },
         );
       },
     );
