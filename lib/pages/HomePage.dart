@@ -5,6 +5,7 @@ import '../models/visit.dart';
 import '../widgets/PlaceCard.dart';
 import 'NewPlacePage.dart';
 import 'MapPage.dart';
+import 'DetailPage.dart'; // ← lembre-se de importar sua DetailPage
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -134,7 +135,6 @@ class _MyHomePageState extends State<HomePage> {
 
   // Metodo separado para organizar a lógica de exibição
   Widget _buildListContent() {
-    // 1. Estado de Carregamento
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(
@@ -143,7 +143,6 @@ class _MyHomePageState extends State<HomePage> {
       );
     }
 
-    // 2. Estado Vazio (Sem dados)
     if (_visits.isEmpty) {
       return Center(
         child: Column(
@@ -172,7 +171,6 @@ class _MyHomePageState extends State<HomePage> {
       );
     }
 
-    // 3. Lista com Dados
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
       itemCount: _visits.length,
@@ -183,13 +181,25 @@ class _MyHomePageState extends State<HomePage> {
           future: database.pictureDao.findFirstPicturePath(visit.id!),
           builder: (context, snapshot) {
             final String? imagePath = snapshot.data;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: PlaceCard(
-                name: visit.placeName,
-                location: visit.placeLocation,
-                date: visit.date,
-                imagePath: imagePath,
+            
+            // ← AQUI COLOQUEI O GestureDetector para abrir o DetailPage
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DetailPage(visitId: visit.id!), // ← passa só o id
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: PlaceCard(
+                  name: visit.placeName,
+                  location: visit.placeLocation,
+                  date: visit.date,
+                  imagePath: imagePath,
+                ),
               ),
             );
           },
