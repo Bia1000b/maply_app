@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import '../database/app_database.dart';
 import '../models/visit.dart';
 import '../models/picture.dart';
 import '../main.dart';
@@ -74,20 +73,16 @@ class _DetailPageState extends State<DetailPage> {
     final DateTime data = DateFormat('dd/MM/yyyy').parse(visit!.date);
     final String? firstImagePath = pictures.isNotEmpty ? pictures.first.filePath : null;
 
-    final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: const Color(0xFF2C2C2C), // Fundo escuro como na imagem
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2C2C2C),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back,),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Detalhes',
-          style: TextStyle(color: Colors.white70, fontSize: 16),
+        title: Text(
+          visit!.placeName,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).primaryColor),
         ),
       ),
       body: Center(
@@ -100,40 +95,6 @@ class _DetailPageState extends State<DetailPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ---------------- CABEÇALHO COM TÍTULO ----------------
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.red),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    Expanded(
-                      child: Text(
-                        visit!.placeName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 40), // Espaço para balancear o botão voltar
-                  ],
-                ),
-              ),
-
               // ---------------- IMAGEM DE CAPA COM BADGES ----------------
               Stack(
                 children: [
@@ -272,43 +233,8 @@ class _DetailPageState extends State<DetailPage> {
                           color: Colors.black87,
                         ),
                       ),
-
                       const SizedBox(height: 16),
 
-                      // Mapa (placeholder - você pode integrar Google Maps ou outro serviço)
-                      Container(
-                        height: 180,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Stack(
-                            children: [
-                              // Aqui você pode adicionar um widget de mapa real
-                              // Por exemplo: GoogleMap, FlutterMap, etc.
-                              Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.map, size: 48, color: Colors.grey[400]),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "Mapa do local",
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

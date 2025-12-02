@@ -5,7 +5,7 @@ import '../models/visit.dart';
 import '../widgets/PlaceCard.dart';
 import 'NewPlacePage.dart';
 import 'MapPage.dart';
-import 'DetailPage.dart'; // ← lembre-se de importar sua DetailPage
+import 'DetailPage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -53,7 +53,6 @@ class _MyHomePageState extends State<HomePage> {
         leading: IconButton(
           icon: Icon(Icons.location_pin, color: Theme.of(context).colorScheme.primary),
           onPressed: () {
-            print('Abrir mapa');
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -192,14 +191,11 @@ class _MyHomePageState extends State<HomePage> {
                   ),
                 );
               },
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: PlaceCard(
-                  name: visit.placeName,
-                  location: visit.placeLocation,
-                  date: visit.date,
-                  imagePath: imagePath,
-                ),
+              child: PlaceCard(
+                name: visit.placeName,
+                location: visit.placeLocation,
+                date: visit.date,
+                imagePath: imagePath,
               ),
             );
           },
