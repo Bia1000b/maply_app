@@ -394,7 +394,26 @@ class _NewPlacePageState extends State<NewPlacePage> {
                 initialValue: _selectedCategory,
                 dropdownColor: Colors.white, // Fundo do dropdown BRANCO
                 style: Theme.of(context).textTheme.labelLarge,
-                items: <String>['Cafeteria', 'Restaurante', 'Parque', 'Museu', 'Hotel', 'Praia', 'Outro']
+                items: <String>[
+                  'Bar / Pub',
+                  'Bibliot. / Livraria',
+                  'Cafeteria',
+                  'Cinema',
+                  'Estádio',
+                  'Feira / Mercado',
+                  'Hotel/Pousada',
+                  'Igreja / Templo',
+                  'Monumento',
+                  'Museu',
+                  'Natureza',
+                  'Parque',
+                  'Praça',
+                  'Praia',
+                  'Restaurante',
+                  'Shopping',
+                  'Teatro',
+                  'Outro'
+                ]
                     .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -452,7 +471,6 @@ class _NewPlacePageState extends State<NewPlacePage> {
                 ),
                 style: Theme.of(context).textTheme.labelLarge,
                 controller: _notesController,
-                // Notas são opcionais, então não precisa de validator
               ),
               SizedBox(height: 20),
 
