@@ -6,6 +6,7 @@ import '../main.dart';
 import '../models/visit.dart';
 import '../models/picture.dart';
 import '../widgets/Label.dart';
+import '../services/place_autocomplete.dart';
 import 'dart:convert';
 import 'dart:io'; //detectar se é Linux/Android
 import 'package:http/http.dart' as http; //chama a API no LINUX
@@ -19,6 +20,15 @@ class NewPlacePage extends StatefulWidget {
 }
 
 class _NewPlacePageState extends State<NewPlacePage> {
+  final PlaceAutocompleteService _autocompleteService = PlaceAutocompleteService(
+    googleApiKey: null, // <-- set your key or null to disable Google
+  );
+
+  List<PlaceSuggestion> _suggestions = [];
+  bool _showSuggestions = false;
+  double? _selectedLat;
+  double? _selectedLng;
+
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
@@ -38,6 +48,96 @@ class _NewPlacePageState extends State<NewPlacePage> {
     _notesController.dispose();
     _dateController.dispose();
     super.dispose();
+  }
+  Widget _buildLocationField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          decoration: InputDecoration(
+            hintText: 'Ex: Av. Paulista, 1578, São Paulo - SP',
+            suffixIcon: Icon(Icons.location_on, color: Colors.grey[400]),
+          ),
+          style: Theme.of(context).textTheme.labelLarge,
+          controller: _locationController,
+          onChanged: (value) async {
+            // clear previously selected coords when user types
+            _selectedLat = null;
+            _selectedLng = null;
+            if (value.trim().isEmpty) {
+              setState(() {
+                _suggestions = [];
+                _showSuggestions = false;
+              });
+              return;
+            }
+            final results = await _autocompleteService.fetch(value);
+            setState(() {
+              _suggestions = results;
+              _showSuggestions = results.isNotEmpty;
+            });
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'A localização é obrigatória.';
+            }
+            return null;
+          },
+        ),
+        if (_showSuggestions && _suggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            constraints: BoxConstraints(maxHeight: 220),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: _suggestions.length,
+              separatorBuilder: (_, __) => Divider(height: 1),
+              itemBuilder: (context, i) {
+                final s = _suggestions[i];
+                return ListTile(
+                  title: Text(s.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  onTap: () async {
+                    // select suggestion
+                    String address = s.description;
+                    double? lat = s.lat;
+                    double? lng = s.lng;
+
+                    // if Google suggestion without coords, fetch details
+                    if ((lat == null || lng == null) && s.placeId != null) {
+                      final details = await _autocompleteService.getPlaceDetails(s.placeId!);
+                      if (details != null) {
+                        address = details.description;
+                        lat = details.lat;
+                        lng = details.lng;
+                      }
+                    }
+
+                    setState(() {
+                      _locationController.text = address;
+                      _showSuggestions = false;
+                      _suggestions = [];
+                      _selectedLat = lat;
+                      _selectedLng = lng;
+                    });
+
+                    // Optional: autofill name if empty
+                    if (_nameController.text.isEmpty) {
+                      // try to infer a name from the suggestion (split by comma)
+                      final inferred = address.split(',').first;
+                      _nameController.text = inferred;
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -339,20 +439,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
 
               // --- Localização ---
               buildLabel('Localização (Endereço)',context),
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'Ex: Av. Paulista, 1578, São Paulo - SP',
-                  suffixIcon: Icon(Icons.location_on, color: Colors.grey[400]),
-                ),
-                style: Theme.of(context).textTheme.labelLarge,
-                controller: _locationController,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'A localização é obrigatória.';
-                  }
-                  return null;
-                },
-              ),
+              _buildLocationField(),
               SizedBox(height: 20),
 
               // --- Notas e Memórias ---
