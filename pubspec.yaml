@@ -37,9 +37,9 @@ dependencies:
   sqflite: ^2.4.2
   path_provider: ^2.1.1
   google_maps_flutter: ^2.5.3
-  flutter_map: ^6.0.0
+  flutter_map: ^8.2.2
   latlong2: ^0.9.0
-  geocoding: ^2.1.1
+  geocoding: ^4.0.0
   http: ^1.2.0
   image_picker: ^1.0.7
 
@@ -53,7 +53,7 @@ dev_dependencies:
   floor_generator: ^1.4.0
   build_runner: ^2.4.0
   flutter_native_splash: ^2.4.1
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

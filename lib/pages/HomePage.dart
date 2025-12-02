@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../main.dart';
 import '../models/visit.dart';
+import '../models/place_filters.dart';
 import '../widgets/PlaceCard.dart';
+import '../widgets/FilterModal.dart';
 import 'NewPlacePage.dart';
 import 'MapPage.dart';
 import 'DetailPage.dart';
@@ -19,6 +22,30 @@ class _MyHomePageState extends State<HomePage> {
   List<Visit> _filteredVisits = [];
   bool _isLoading = true;
 
+  String _searchText = "";
+  PlaceFilters _filters = PlaceFilters();
+
+  final List<String> _categories = [
+    'Bar / Pub',
+    'Bibliot. / Livraria',
+    'Cafeteria',
+    'Cinema',
+    'Estádio',
+    'Feira / Mercado',
+    'Hotel/Pousada',
+    'Igreja / Templo',
+    'Monumento',
+    'Museu',
+    'Natureza',
+    'Parque',
+    'Praça',
+    'Praia',
+    'Restaurante',
+    'Shopping',
+    'Teatro',
+    'Outro',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -28,36 +55,78 @@ class _MyHomePageState extends State<HomePage> {
   Future<void> getVisits() async {
     try {
       final visits = await database.visitDao.findAllVisits();
+      visits.sort((a, b) {
+        try {
+          DateFormat format = DateFormat("dd/MM/yyyy");
+          DateTime dateA = format.parse(a.date);
+          DateTime dateB = format.parse(b.date);
+          return dateB.compareTo(dateA);
+        } catch (e) {
+          return 0;
+        }
+      });
 
       if (mounted) {
         setState(() {
           _allVisits = visits;
-          _filteredVisits = visits;
           _isLoading = false;
+          _applyFilters();
         });
       }
     } catch (e) {
       debugPrint("ERRO AO CARREGAR: $e");
-      if (mounted) {
-        setState(() {
-          _allVisits = [];
-          _filteredVisits = [];
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _runFilter(String enteredKeyword) {
-    List<Visit> results = [];
-    if (enteredKeyword.isEmpty) {
-      results = _allVisits;
-    } else {
-      results = _allVisits
-          .where((visit) =>
-      visit.placeName.toLowerCase().contains(enteredKeyword.toLowerCase()) ||
-          visit.placeLocation.toLowerCase().contains(enteredKeyword.toLowerCase()))
+  void _applyFilters() {
+    List<Visit> results = _allVisits;
+
+    // Texto
+    if (_searchText.isNotEmpty) {
+      results = results
+          .where(
+            (visit) =>
+                visit.placeName.toLowerCase().contains(
+                  _searchText.toLowerCase(),
+                ) ||
+                visit.placeLocation.toLowerCase().contains(
+                  _searchText.toLowerCase(),
+                ),
+          )
           .toList();
+    }
+
+    // Categoria
+    if (_filters.category != null) {
+      results = results
+          .where((visit) => visit.category == _filters.category)
+          .toList();
+    }
+
+    // Nota
+    if (_filters.minRating > 0) {
+      results = results
+          .where((visit) => visit.rating >= _filters.minRating)
+          .toList();
+    }
+
+    // Data (Range)
+    if (_filters.dateRange != null) {
+      DateFormat format = DateFormat("dd/MM/yyyy");
+      results = results.where((visit) {
+        try {
+          DateTime visitDate = format.parse(visit.date);
+          return visitDate.isAfter(
+                _filters.dateRange!.start.subtract(const Duration(days: 1)),
+              ) &&
+              visitDate.isBefore(
+                _filters.dateRange!.end.add(const Duration(days: 1)),
+              );
+        } catch (e) {
+          return false;
+        }
+      }).toList();
     }
 
     setState(() {
@@ -65,23 +134,45 @@ class _MyHomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _openFilterModal() async {
+    final result = await showModalBottomSheet<PlaceFilters>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) =>
+          FilterModal(currentFilters: _filters, categories: _categories),
+    );
+    if (result != null) {
+      setState(() {
+        _filters = result;
+        _applyFilters();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromARGB(255, 250, 250, 250),
+      backgroundColor: const Color.fromARGB(255, 250, 250, 250),
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.location_pin, color: Theme.of(context).colorScheme.primary),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MapPage(visits: _allVisits),
-              ),
-            );
-          },
+          icon: Icon(
+            Icons.location_pin,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => MapPage(visits: _allVisits)),
+          ),
         ),
-        title: Center(child: Text('Meus Lugares', style: Theme.of(context).textTheme.headlineSmall)),
+        title: Center(
+          child: Text(
+            'Meus Lugares',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -95,9 +186,7 @@ class _MyHomePageState extends State<HomePage> {
                 onPressed: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const NewPlacePage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const NewPlacePage()),
                   );
                   getVisits();
                 },
@@ -109,51 +198,127 @@ class _MyHomePageState extends State<HomePage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 16, left: 16, top: 16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
-                    onChanged: (value) => _runFilter(value),
+                    onChanged: (val) {
+                      _searchText = val;
+                      _applyFilters();
+                    },
                     decoration: InputDecoration(
                       hintText: 'Buscar',
                       hintStyle: TextStyle(color: Colors.grey[600]),
                       prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                       filled: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 16,
+                      ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                     ),
-                    style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
                 const SizedBox(width: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0F0),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.filter_list, color: Colors.black),
-                    onPressed: () {
-                      print('Abrir filtros');
-                    },
-                  ),
-                ),
+                _buildFilterButton(),
               ],
             ),
           ),
-          Expanded(
-            child: _buildListContent(),
-          ),
+
+          // --- Chips de Filtros Ativos ---
+          if (_filters.hasActiveFilters) _buildActiveFiltersChips(),
+
+          Expanded(child: _buildListContent()),
         ],
       ),
     );
   }
 
-  // Metodo separado para organizar a lógica de exibição
+  Widget _buildFilterButton() {
+    bool isActive = _filters.hasActiveFilters;
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: isActive
+                ? Theme.of(context).colorScheme.primary
+                : const Color(0xFFF0F0F0),
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.filter_list,
+              color: isActive ? Colors.white : Colors.black,
+            ),
+            onPressed: _openFilterModal,
+          ),
+        ),
+        if (isActive)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActiveFiltersChips() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            if (_filters.category != null)
+              _buildChip(
+                _filters.category!,
+                () => setState(() {
+                  _filters.category = null;
+                  _applyFilters();
+                }),
+              ),
+            if (_filters.minRating > 0)
+              _buildChip(
+                "Nota >= ${_filters.minRating.toInt()}",
+                () => setState(() {
+                  _filters.minRating = 0.0;
+                  _applyFilters();
+                }),
+              ),
+            if (_filters.dateRange != null)
+              _buildChip(
+                "Período definido",
+                () => setState(() {
+                  _filters.dateRange = null;
+                  _applyFilters();
+                }),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip(String label, VoidCallback onDelete) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Chip(label: Text(label), onDeleted: onDelete),
+    );
+  }
+
   Widget _buildListContent() {
     if (_isLoading) {
       return Center(
@@ -162,17 +327,12 @@ class _MyHomePageState extends State<HomePage> {
         ),
       );
     }
-
     if (_filteredVisits.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-                Icons.map_outlined,
-                size: 80,
-                color: Colors.grey[300]
-            ),
+            Icon(Icons.map_outlined, size: 80, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
               "Nenhum lugar encontrado",
@@ -181,10 +341,6 @@ class _MyHomePageState extends State<HomePage> {
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[600],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Adicione um novo lugar clicando no +",
             ),
           ],
         ),
@@ -196,27 +352,21 @@ class _MyHomePageState extends State<HomePage> {
       itemCount: _filteredVisits.length,
       itemBuilder: (context, index) {
         final visit = _filteredVisits[index];
-
         return FutureBuilder<String?>(
           future: database.pictureDao.findFirstPicturePath(visit.id!),
           builder: (context, snapshot) {
-            final String? imagePath = snapshot.data;
-            
-            // ← AQUI COLOQUEI O GestureDetector para abrir o DetailPage
             return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DetailPage(visitId: visit.id!), // ← passa só o id
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailPage(visitId: visit.id!),
+                ),
+              ),
               child: PlaceCard(
                 name: visit.placeName,
                 location: visit.placeLocation,
                 date: visit.date,
-                imagePath: imagePath,
+                imagePath: snapshot.data,
               ),
             );
           },

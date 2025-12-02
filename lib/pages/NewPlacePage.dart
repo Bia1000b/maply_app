@@ -20,9 +20,10 @@ class NewPlacePage extends StatefulWidget {
 }
 
 class _NewPlacePageState extends State<NewPlacePage> {
-  final PlaceAutocompleteService _autocompleteService = PlaceAutocompleteService(
-    googleApiKey: null, // <-- set your key or null to disable Google
-  );
+  final PlaceAutocompleteService _autocompleteService =
+      PlaceAutocompleteService(
+        googleApiKey: null, // <-- set your key or null to disable Google
+      );
 
   List<PlaceSuggestion> _suggestions = [];
   bool _showSuggestions = false;
@@ -49,6 +50,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
     _dateController.dispose();
     super.dispose();
   }
+
   Widget _buildLocationField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +102,11 @@ class _NewPlacePageState extends State<NewPlacePage> {
               itemBuilder: (context, i) {
                 final s = _suggestions[i];
                 return ListTile(
-                  title: Text(s.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  title: Text(
+                    s.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   onTap: () async {
                     // select suggestion
                     String address = s.description;
@@ -109,7 +115,8 @@ class _NewPlacePageState extends State<NewPlacePage> {
 
                     // if Google suggestion without coords, fetch details
                     if ((lat == null || lng == null) && s.placeId != null) {
-                      final details = await _autocompleteService.getPlaceDetails(s.placeId!);
+                      final details = await _autocompleteService
+                          .getPlaceDetails(s.placeId!);
                       if (details != null) {
                         address = details.description;
                         lat = details.lat;
@@ -168,8 +175,10 @@ class _NewPlacePageState extends State<NewPlacePage> {
   }
 
   void _mostrarOpcoesImagem(BuildContext context) {
-    if(Platform.isLinux || Platform.isWindows) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Câmera disponível apenas no Mobile")));
+    if (Platform.isLinux || Platform.isWindows) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Câmera disponível apenas no Mobile")),
+      );
       return;
     }
 
@@ -234,11 +243,13 @@ class _NewPlacePageState extends State<NewPlacePage> {
       try {
         final encodedAddress = Uri.encodeComponent(address);
         final url = Uri.parse(
-            'https://nominatim.openstreetmap.org/search?q=$encodedAddress&format=json&limit=1');
+          'https://nominatim.openstreetmap.org/search?q=$encodedAddress&format=json&limit=1',
+        );
 
-        final response = await http.get(url, headers: {
-          'User-Agent': 'maply_app/1.0',
-        });
+        final response = await http.get(
+          url,
+          headers: {'User-Agent': 'maply_app/1.0'},
+        );
 
         if (response.statusCode == 200) {
           final List data = json.decode(response.body);
@@ -319,9 +330,9 @@ class _NewPlacePageState extends State<NewPlacePage> {
         final String permanentPath = await _saveImagePermanently(tempPath);
 
         final picture = Picture(
-            visitId: visitId,
-            filePath: permanentPath,
-            description: ''
+          visitId: visitId,
+          filePath: permanentPath,
+          description: '',
         );
 
         await database.pictureDao.insertPicture(picture);
@@ -331,19 +342,24 @@ class _NewPlacePageState extends State<NewPlacePage> {
         Navigator.of(context).pop();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Salvo com sucesso!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Salvo com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
         );
 
         Navigator.of(context).pop();
       }
-
     } catch (e) {
       print("ERRO AO SALVAR: $e");
 
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -358,7 +374,10 @@ class _NewPlacePageState extends State<NewPlacePage> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Registrar Novo Local', style: Theme.of(context).textTheme.titleLarge),
+        title: Text(
+          'Registrar Novo Local',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         centerTitle: true,
       ),
       body: Form(
@@ -371,9 +390,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
               // --- Nome do Local ---
               buildLabel('Nome do Local', context),
               TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'Ex: Café da Esquina',
-                ),
+                decoration: InputDecoration(hintText: 'Ex: Café da Esquina'),
                 style: Theme.of(context).textTheme.labelLarge,
                 controller: _nameController,
                 validator: (value) {
@@ -389,37 +406,40 @@ class _NewPlacePageState extends State<NewPlacePage> {
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   hintText: 'Selecione uma categoria',
-                  suffixIcon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+                  suffixIcon: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.grey[400],
+                  ),
                 ),
                 initialValue: _selectedCategory,
                 dropdownColor: Colors.white, // Fundo do dropdown BRANCO
                 style: Theme.of(context).textTheme.labelLarge,
-                items: <String>[
-                  'Bar / Pub',
-                  'Bibliot. / Livraria',
-                  'Cafeteria',
-                  'Cinema',
-                  'Estádio',
-                  'Feira / Mercado',
-                  'Hotel/Pousada',
-                  'Igreja / Templo',
-                  'Monumento',
-                  'Museu',
-                  'Natureza',
-                  'Parque',
-                  'Praça',
-                  'Praia',
-                  'Restaurante',
-                  'Shopping',
-                  'Teatro',
-                  'Outro'
-                ]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items:
+                    <String>[
+                      'Bar / Pub',
+                      'Bibliot. / Livraria',
+                      'Cafeteria',
+                      'Cinema',
+                      'Estádio',
+                      'Feira / Mercado',
+                      'Hotel/Pousada',
+                      'Igreja / Templo',
+                      'Monumento',
+                      'Museu',
+                      'Natureza',
+                      'Parque',
+                      'Praça',
+                      'Praia',
+                      'Restaurante',
+                      'Shopping',
+                      'Teatro',
+                      'Outro',
+                    ].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
                 onChanged: (String? newValue) {
                   setState(() {
                     _selectedCategory = newValue;
@@ -435,7 +455,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
               SizedBox(height: 20),
 
               // --- Data da Visita ---
-              buildLabel('Data da Visita',context),
+              buildLabel('Data da Visita', context),
               GestureDetector(
                 onTap: () => _selectDate(context),
                 child: TextFormField(
@@ -443,7 +463,10 @@ class _NewPlacePageState extends State<NewPlacePage> {
                   controller: _dateController,
                   decoration: InputDecoration(
                     hintText: '00/00/0000',
-                    suffixIcon: Icon(Icons.calendar_today, color: Colors.grey[400]),
+                    suffixIcon: Icon(
+                      Icons.calendar_today,
+                      color: Colors.grey[400],
+                    ),
                   ),
                   style: Theme.of(context).textTheme.labelLarge,
                   validator: (value) {
@@ -457,12 +480,12 @@ class _NewPlacePageState extends State<NewPlacePage> {
               SizedBox(height: 20),
 
               // --- Localização ---
-              buildLabel('Localização (Endereço)',context),
+              buildLabel('Localização (Endereço)', context),
               _buildLocationField(),
               SizedBox(height: 20),
 
               // --- Notas e Memórias ---
-              buildLabel('Notas e Memórias',context),
+              buildLabel('Notas e Memórias', context),
               TextFormField(
                 maxLines: 5,
                 decoration: InputDecoration(
@@ -476,9 +499,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
 
               buildLabel('Avaliação (0-5)', context),
               TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'Número de 0 - 5',
-                ),
+                decoration: InputDecoration(hintText: 'Número de 0 - 5'),
                 style: Theme.of(context).textTheme.labelLarge,
                 controller: _ratingsController,
                 validator: (value) {
@@ -500,7 +521,9 @@ class _NewPlacePageState extends State<NewPlacePage> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: _selectedImagePaths.map((path) => _buildSelectedImagePreview(path)).toList(),
+                    children: _selectedImagePaths
+                        .map((path) => _buildSelectedImagePreview(path))
+                        .toList(),
                   ),
                 ),
               ],
@@ -539,7 +562,8 @@ class _NewPlacePageState extends State<NewPlacePage> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
-            child: Image.file( // USA IMAGE.FILE
+            child: Image.file(
+              // USA IMAGE.FILE
               File(imagePath),
               width: 100,
               height: 100,
@@ -574,7 +598,10 @@ class _NewPlacePageState extends State<NewPlacePage> {
   Widget _buildGalleryButton(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: () => _mostrarOpcoesImagem(context),
-      icon: Icon(Icons.photo_library, color: Theme.of(context).colorScheme.primary),
+      icon: Icon(
+        Icons.photo_library,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       label: Text(
         'Adicionar Foto da Galeria',
         style: Theme.of(context).textTheme.labelLarge!.copyWith(
@@ -586,7 +613,10 @@ class _NewPlacePageState extends State<NewPlacePage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1.5,
+        ),
         backgroundColor: Colors.transparent,
       ),
     );
