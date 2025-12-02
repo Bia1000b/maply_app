@@ -15,7 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<HomePage> {
-  List<Visit> _visits = [];
+  List<Visit> _allVisits = [];
+  List<Visit> _filteredVisits = [];
   bool _isLoading = true;
 
   @override
@@ -30,7 +31,8 @@ class _MyHomePageState extends State<HomePage> {
 
       if (mounted) {
         setState(() {
-          _visits = visits;
+          _allVisits = visits;
+          _filteredVisits = visits;
           _isLoading = false;
         });
       }
@@ -38,11 +40,29 @@ class _MyHomePageState extends State<HomePage> {
       debugPrint("ERRO AO CARREGAR: $e");
       if (mounted) {
         setState(() {
-          _visits = [];
+          _allVisits = [];
+          _filteredVisits = [];
           _isLoading = false;
         });
       }
     }
+  }
+
+  void _runFilter(String enteredKeyword) {
+    List<Visit> results = [];
+    if (enteredKeyword.isEmpty) {
+      results = _allVisits;
+    } else {
+      results = _allVisits
+          .where((visit) =>
+      visit.placeName.toLowerCase().contains(enteredKeyword.toLowerCase()) ||
+          visit.placeLocation.toLowerCase().contains(enteredKeyword.toLowerCase()))
+          .toList();
+    }
+
+    setState(() {
+      _filteredVisits = results;
+    });
   }
 
   @override
@@ -56,7 +76,7 @@ class _MyHomePageState extends State<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => MapPage(visits: _visits),
+                builder: (context) => MapPage(visits: _allVisits),
               ),
             );
           },
@@ -94,6 +114,7 @@ class _MyHomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: TextField(
+                    onChanged: (value) => _runFilter(value),
                     decoration: InputDecoration(
                       hintText: 'Buscar',
                       hintStyle: TextStyle(color: Colors.grey[600]),
@@ -142,7 +163,7 @@ class _MyHomePageState extends State<HomePage> {
       );
     }
 
-    if (_visits.isEmpty) {
+    if (_filteredVisits.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -172,9 +193,9 @@ class _MyHomePageState extends State<HomePage> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: _visits.length,
+      itemCount: _filteredVisits.length,
       itemBuilder: (context, index) {
-        final visit = _visits[index];
+        final visit = _filteredVisits[index];
 
         return FutureBuilder<String?>(
           future: database.pictureDao.findFirstPicturePath(visit.id!),
