@@ -4,6 +4,8 @@ import '../models/visit.dart';
 import '../models/picture.dart';
 import '../main.dart';
 import 'package:intl/intl.dart';
+import 'NewPlacePage.dart';
+
 
 
 class DetailPage extends StatefulWidget {
@@ -20,6 +22,7 @@ class _DetailPageState extends State<DetailPage> {
   List<Picture> pictures = [];
 
   bool loading = true;
+  bool _changed = false; // <--- NOVO
 
   @override
   void initState() {
@@ -56,6 +59,61 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  Future<void> _editVisit() async {
+    if (visit == null) return;
+
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewPlacePage(existingVisit: visit),
+      ),
+    );
+
+    if (result == true) {
+      _changed = true;
+      await _loadVisitData(); // recarrega dados da visita atualizada
+      setState(() {});
+    }
+  }
+
+  Future<void> _deleteVisit() async {
+    if (visit == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Apagar visita'),
+        content: const Text(
+          'Tem certeza que deseja apagar esta visita?\n'
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Apagar',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await database.visitDao.deleteVisit(visit!);
+    // se quiser depois, dá pra apagar as fotos ligadas a essa visita aqui também
+
+    if (mounted) {
+      Navigator.pop(context, true); // volta pra tela anterior, avisando que mudou
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -78,7 +136,7 @@ class _DetailPageState extends State<DetailPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back,),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, _changed),
         ),
         title: Text(
           visit!.placeName,
@@ -243,6 +301,31 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
       ),
-    );
+    // 👇 AQUI É O bottomNavigationBar
+  bottomNavigationBar: Padding(
+    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    child: Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _editVisit,
+            child: const Text('Editar visita'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _deleteVisit,
+            child: const Text('Deletar visita'),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
   }
 }

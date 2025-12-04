@@ -13,6 +13,9 @@ abstract class VisitDao {
   @insert
   Future<int> insertVisit(Visit visit);
 
+  @update
+  Future<int> updateVisit(Visit visit);
+
   @delete
   Future<void> deleteVisit(Visit visit);
 }

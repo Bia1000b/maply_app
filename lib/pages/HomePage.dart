@@ -356,12 +356,19 @@ class _MyHomePageState extends State<HomePage> {
           future: database.pictureDao.findFirstPicturePath(visit.id!),
           builder: (context, snapshot) {
             return GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DetailPage(visitId: visit.id!),
-                ),
+              onTap: () async {
+            final changed = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DetailPage(visitId: visit.id!),
               ),
+            );
+
+            // Se a DetailPage avisar que algo mudou (true), recarrega a lista
+            if (changed == true) {
+              getVisits();
+            }
+          },
               child: PlaceCard(
                 name: visit.placeName,
                 location: visit.placeLocation,

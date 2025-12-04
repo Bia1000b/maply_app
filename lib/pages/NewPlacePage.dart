@@ -13,11 +13,21 @@ import 'package:http/http.dart' as http; //chama a API no LINUX
 import 'package:path/path.dart' as path;
 
 class NewPlacePage extends StatefulWidget {
-  const NewPlacePage({super.key});
+  /// null  = estamos criando uma nova visita
+  /// não-null = estamos editando uma visita existente
+  final Visit? existingVisit;
+
+  const NewPlacePage({
+    super.key,
+    this.existingVisit,
+  });
+
+  bool get isEditing => existingVisit != null;
 
   @override
   _NewPlacePageState createState() => _NewPlacePageState();
 }
+
 
 class _NewPlacePageState extends State<NewPlacePage> {
   final PlaceAutocompleteService _autocompleteService =
@@ -41,6 +51,26 @@ class _NewPlacePageState extends State<NewPlacePage> {
   String? _selectedCategory;
   final List<String> _selectedImagePaths = [];
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Se veio uma visita para edição, preenche os campos
+    if (widget.existingVisit != null) {
+      final v = widget.existingVisit!;
+
+      _nameController.text = v.placeName;
+      _locationController.text = v.placeLocation;
+      _notesController.text = v.description ?? '';
+      _dateController.text = v.date;
+      _ratingsController.text = v.rating.toString();
+      _selectedCategory = v.category;
+
+      _selectedLat = v.latitude;
+      _selectedLng = v.longitude;
+    }
+  }
 
   @override
   void dispose() {
@@ -288,30 +318,36 @@ class _NewPlacePageState extends State<NewPlacePage> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  // Se estiver editando, começa com a latitude/longitude que já existem
+  double latitude = widget.existingVisit?.latitude ?? 0;
+  double longitude = widget.existingVisit?.longitude ?? 0;
+
+  try {
+    // Tenta obter as coordenadas pelo endereço digitado
+    try {
+      final coords = await _getCoordinates(_locationController.text);
+      if (coords != null) {
+        latitude = coords['lat'] ?? latitude;
+        longitude = coords['lng'] ?? longitude;
+      }
+    } catch (e) {
+      print("Erro de Geocoding (não crítico): $e");
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    int visitId;
 
-    double latitude = 0;
-    double longitude = 0;
-
-    try {
-      try {
-        final coords = await _getCoordinates(_locationController.text);
-        if (coords != null) {
-          latitude = coords['lat'] ?? 0;
-          longitude = coords['lng'] ?? 0;
-        }
-      } catch (e) {
-        print("Erro de Geocoding (não crítico): $e");
-      }
-
+    if (!widget.isEditing) {
+      // ---------- CRIAR NOVA VISITA ----------
       final newVisit = Visit(
         placeName: _nameController.text,
         category: _selectedCategory ?? "Outro",
@@ -324,46 +360,73 @@ class _NewPlacePageState extends State<NewPlacePage> {
         favorite: false,
       );
 
-      final int visitId = await database.visitDao.insertVisit(newVisit);
+      visitId = await database.visitDao.insertVisit(newVisit);
+    } else {
+      // ---------- ATUALIZAR VISITA EXISTENTE ----------
+      final old = widget.existingVisit!;
 
-      for (String tempPath in _selectedImagePaths) {
-        final String permanentPath = await _saveImagePermanently(tempPath);
+      final updatedVisit = Visit(
+        id: old.id, // mantém o mesmo id
+        placeName: _nameController.text,
+        category: _selectedCategory ?? "Outro",
+        placeLocation: _locationController.text,
+        date: _dateController.text,
+        description: _notesController.text,
+        rating: double.tryParse(_ratingsController.text) ?? old.rating,
+        latitude: latitude,
+        longitude: longitude,
+        favorite: old.favorite,
+      );
 
-        final picture = Picture(
-          visitId: visitId,
-          filePath: permanentPath,
-          description: '',
-        );
+      await database.visitDao.updateVisit(updatedVisit);
+      visitId = old.id!;
+    }
 
-        await database.pictureDao.insertPicture(picture);
-      }
+    // Salvar APENAS as novas imagens escolhidas agora
+    for (String tempPath in _selectedImagePaths) {
+      final String permanentPath = await _saveImagePermanently(tempPath);
 
-      if (mounted) {
-        Navigator.of(context).pop();
+      final picture = Picture(
+        visitId: visitId,
+        filePath: permanentPath,
+        description: '',
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Salvo com sucesso!'),
-            backgroundColor: Colors.green,
+      await database.pictureDao.insertPicture(picture);
+    }
+
+    if (mounted) {
+      Navigator.of(context).pop(); // fecha o loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.isEditing
+                ? 'Atualizado com sucesso!'
+                : 'Salvo com sucesso!',
           ),
-        );
+          backgroundColor: Colors.green,
+        ),
+      );
 
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      print("ERRO AO SALVAR: $e");
+      // volta dizendo para quem chamou que algo mudou
+      Navigator.of(context).pop(true);
+    }
+  } catch (e) {
+    print("ERRO AO SALVAR: $e");
 
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao salvar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (mounted) {
+      Navigator.of(context).pop(); // fecha o loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao salvar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -375,7 +438,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Registrar Novo Local',
+          widget.isEditing ? 'Editar Visita' : 'Registrar Novo Local',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         centerTitle: true,
@@ -543,7 +606,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
             padding: EdgeInsets.symmetric(vertical: 16.0),
           ),
           child: Text(
-            'Salvar Memória',
+            widget.isEditing ? 'Atualizar Visita' : 'Salvar Memória',
             style: Theme.of(context).textTheme.labelLarge!.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,

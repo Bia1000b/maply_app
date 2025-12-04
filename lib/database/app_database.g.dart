@@ -139,6 +139,22 @@ class _$VisitDao extends VisitDao {
                   'longitude': item.longitude,
                   'favorite': item.favorite ? 1 : 0
                 }),
+        _visitUpdateAdapter = UpdateAdapter(
+            database,
+            'Visit',
+            ['id'],
+            (Visit item) => <String, Object?>{
+                  'id': item.id,
+                  'description': item.description,
+                  'rating': item.rating,
+                  'date': item.date,
+                  'placeName': item.placeName,
+                  'placeLocation': item.placeLocation,
+                  'category': item.category,
+                  'latitude': item.latitude,
+                  'longitude': item.longitude,
+                  'favorite': item.favorite ? 1 : 0
+                }),
         _visitDeletionAdapter = DeletionAdapter(
             database,
             'Visit',
@@ -163,6 +179,8 @@ class _$VisitDao extends VisitDao {
   final QueryAdapter _queryAdapter;
 
   final InsertionAdapter<Visit> _visitInsertionAdapter;
+
+  final UpdateAdapter<Visit> _visitUpdateAdapter;
 
   final DeletionAdapter<Visit> _visitDeletionAdapter;
 
@@ -202,6 +220,12 @@ class _$VisitDao extends VisitDao {
   @override
   Future<int> insertVisit(Visit visit) {
     return _visitInsertionAdapter.insertAndReturnId(
+        visit, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateVisit(Visit visit) {
+    return _visitUpdateAdapter.updateAndReturnChangedRows(
         visit, OnConflictStrategy.abort);
   }
 
