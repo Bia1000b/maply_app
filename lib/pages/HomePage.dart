@@ -364,7 +364,7 @@ class _MyHomePageState extends State<HomePage> {
               ),
             );
 
-            // Se a DetailPage avisar que algo mudou (true), recarrega a lista
+            // Se a DetailPage avisar que algo mudou, recarrega a lista
             if (changed == true) {
               getVisits();
             }

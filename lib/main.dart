@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
           labelLarge: TextStyle(color: Colors.black, fontSize: 14),
         ),
         colorScheme: ColorScheme.light(
-          primary: Color.fromARGB(255, 135, 0, 4), // Cor principal mantida (vermelho)
+          primary: Color.fromARGB(255, 135, 0, 4), // Cor principal (vermelho)
           secondary: Color.fromARGB(255, 172, 48, 50),
           surface: Colors.white, // Superfícies (Cards, etc.) BRANCAS
           onSurface: Colors.black, // Conteúdo em superfícies (texto, ícones)

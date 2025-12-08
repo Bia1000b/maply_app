@@ -1,4 +1,4 @@
-import 'dart:io'; // Necessário para carregar arquivos do celular
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 class PlaceCard extends StatelessWidget {

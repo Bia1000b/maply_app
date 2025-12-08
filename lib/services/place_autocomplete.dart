@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-/// Minimal DTO for suggestions
 class PlaceSuggestion {
   final String description;
-  final String? placeId; // Google place_id or null
+  final String? placeId;
   final double? lat;
   final double? lng;
 
@@ -16,9 +15,9 @@ class PlaceSuggestion {
   });
 }
 
-/// Service that uses Google Places (when apiKey provided) and Nominatim fallback
+/// Service que usa Google Places Autocomplete ou OSM Nominatim
 class PlaceAutocompleteService {
-  final String? googleApiKey; // set to null to disable Google usage
+  final String? googleApiKey; // se a key for nula, usa o Nominatim
   PlaceAutocompleteService({this.googleApiKey});
 
   Future<List<PlaceSuggestion>> fetch(
@@ -27,7 +26,6 @@ class PlaceAutocompleteService {
   }) async {
     if (input.trim().isEmpty) return [];
 
-    // Try Google if key provided
     if (googleApiKey != null && googleApiKey!.isNotEmpty) {
       try {
         final sessionToken = DateTime.now().millisecondsSinceEpoch.toString();
@@ -61,7 +59,7 @@ class PlaceAutocompleteService {
       } catch (_) {}
     }
 
-    // Fallback: OSM Nominatim search
+    // Fallback: OSM Nominatim
     try {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(input)}&format=json&limit=6&addressdetails=0',
@@ -87,7 +85,7 @@ class PlaceAutocompleteService {
     return [];
   }
 
-  /// If using Google, get place details (lat/lng) by placeId
+  /// Se usando Google, obter detalhes do lugar (lat/lng) pelo placeId
   Future<PlaceSuggestion?> getPlaceDetails(String placeId) async {
     if (googleApiKey == null || googleApiKey!.isEmpty) return null;
     try {

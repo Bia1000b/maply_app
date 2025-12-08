@@ -22,7 +22,7 @@ class _DetailPageState extends State<DetailPage> {
   List<Picture> pictures = [];
 
   bool loading = true;
-  bool _changed = false; // <--- NOVO
+  bool _changed = false;
 
   @override
   void initState() {
@@ -301,7 +301,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
       ),
-    // 👇 AQUI É O bottomNavigationBar
+
   bottomNavigationBar: Padding(
     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     child: Row(

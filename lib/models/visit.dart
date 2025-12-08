@@ -6,7 +6,7 @@ class Visit {
   final int? id;
 
   final String? description;
-  final double rating; // Rating out of 5
+  final double rating;
   final String date;
   final String placeName;
   final String placeLocation;

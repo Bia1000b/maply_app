@@ -6,7 +6,6 @@ import '../dao/visit_dao.dart';
 import '../dao/picture_dao.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 
-// This part directive tells Floor where to generate the code
 part 'app_database.g.dart';
 
 @Database(version: 1, entities: [Visit, Picture])

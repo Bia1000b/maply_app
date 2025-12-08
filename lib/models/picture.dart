@@ -2,7 +2,7 @@ import 'package:floor/floor.dart';
 import 'visit.dart';
 
 @Entity(
-    tableName: 'Picture', // Nome da tabela
+    tableName: 'Picture',
     foreignKeys: [
       ForeignKey(
           childColumns: ['visitId'],

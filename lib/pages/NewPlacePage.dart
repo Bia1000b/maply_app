@@ -32,7 +32,7 @@ class NewPlacePage extends StatefulWidget {
 class _NewPlacePageState extends State<NewPlacePage> {
   final PlaceAutocompleteService _autocompleteService =
       PlaceAutocompleteService(
-        googleApiKey: null, // <-- set your key or null to disable Google
+        googleApiKey: null, // se a key for nula, usa o Nominatim
       );
 
   List<PlaceSuggestion> _suggestions = [];
@@ -93,7 +93,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
           style: Theme.of(context).textTheme.labelLarge,
           controller: _locationController,
           onChanged: (value) async {
-            // clear previously selected coords when user types
+            // Limpar coordenadas quando o user digitar
             _selectedLat = null;
             _selectedLng = null;
             if (value.trim().isEmpty) {
@@ -138,12 +138,12 @@ class _NewPlacePageState extends State<NewPlacePage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   onTap: () async {
-                    // select suggestion
+                    // selecionar sugestão
                     String address = s.description;
                     double? lat = s.lat;
                     double? lng = s.lng;
 
-                    // if Google suggestion without coords, fetch details
+                    // se sugestão do Google sem coords, buscar detalhes
                     if ((lat == null || lng == null) && s.placeId != null) {
                       final details = await _autocompleteService
                           .getPlaceDetails(s.placeId!);
@@ -161,10 +161,9 @@ class _NewPlacePageState extends State<NewPlacePage> {
                       _selectedLat = lat;
                       _selectedLng = lng;
                     });
-
-                    // Optional: autofill name if empty
+                    // se o nome estiver vazio, tentar inferir
                     if (_nameController.text.isEmpty) {
-                      // try to infer a name from the suggestion (split by comma)
+                      // tentar inferir um nome a partir da sugestão (dividir por vírgula)
                       final inferred = address.split(',').first;
                       _nameController.text = inferred;
                     }
@@ -382,7 +381,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
       visitId = old.id!;
     }
 
-    // Salvar APENAS as novas imagens escolhidas agora
+    // Salvar APENAS as novas imagens escolhidas
     for (String tempPath in _selectedImagePaths) {
       final String permanentPath = await _saveImagePermanently(tempPath);
 
@@ -626,7 +625,6 @@ class _NewPlacePageState extends State<NewPlacePage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
             child: Image.file(
-              // USA IMAGE.FILE
               File(imagePath),
               width: 100,
               height: 100,
@@ -657,7 +655,7 @@ class _NewPlacePageState extends State<NewPlacePage> {
     );
   }
 
-  // Novo Widget: Botão que abre a galeria
+  // Botão que abre a galeria
   Widget _buildGalleryButton(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: () => _mostrarOpcoesImagem(context),
